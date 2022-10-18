@@ -1,4 +1,4 @@
-from flask import Flask, jsonify     #when using this the import Flask use a UPPER CASE
+from flask import Flask, jsonify  
 from flask_sqlalchemy import SQLAlchemy
 from datetime import date
 from flask_marshmallow import Marshmallow
@@ -6,30 +6,29 @@ from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
 app.config ['JSON_SORT_KEYS'] = False
-                                       # always do in this sequence and config is done at the top of the code
+                                            
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://trello_dev:password123@127.0.0.1:5432/trello'
 
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 bcrypt = Bcrypt(app)
 
-class User(db.Model):   # This is for aurtherisation of the user
+class User(db.Model):  
     __tablename__ = 'users'
-
+    
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    email = db.Column(db.String, nullable=False, unique=True)  # nullable means you can not leave this blank for the email
+    email = db.Column(db.String, nullable=False, unique=True)  
     password = db.Column(db.String, nullable=False)
-    is_admin = db.Column(db.Boolean, default=False)   # is_admin the "is" means its a boolean value
+    is_admin = db.Column(db.Boolean, default=False)   
 
 class UserSchema(ma.Schema):
-    class Meta:
+    class Meata:
         fields = ('id', 'name', 'email', 'is_admin')
 
 
-class Card(db.Model):       # This will create a table that can be viewed by the users
-    __tablename__ = 'cards'     # Changes the name of the name from card to cards
-
+class Card(db.Model):      
+    __tablename__ = 'cards'   
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100))
     description = db.Column(db.Text)
@@ -39,15 +38,13 @@ class Card(db.Model):       # This will create a table that can be viewed by the
 
 class CardSchema(ma.Schema):
     class Meta:
-        fields = ('id', 'title', 'description', 'status', 'priority', 'date')
-        ordered = True
+        fields = ('id', 'title', 'description', 'date', 'status', 'priority' )
 
 
-# Define a custom CLI (terminal) command
-@app.cli.command('create')   # To use this command, you need to write flask then ('What word used here')
+@app.cli.command('create')  
 def create_db():
     db.create_all()
-    print("Tables created") # This will print the table that was created
+    print("Tables created")  
 
 @app.cli.command('drop')
 def drop_db():
@@ -68,7 +65,6 @@ def seed_db():
             password=bcrypt.generate_password_hash('12345').decode('utf-8')
         )
     ]
-
     cards = [
         Card(
             title = 'Start the project',
@@ -105,27 +101,20 @@ def seed_db():
     db.session.commit()
     print('Tables seeded')
 
-
 @app.route('/cards/')
-def all_cards():
-    # select * from cards;
+def all_cards():     # select * from all_cards
     # cards = Card.query.all()
-    # stmt = db.select(Card).where(Card.status == 'To Do')
-    stmt = db.select(Card).order_by(Card.priority.desc(), Card.title)
-    cards = db.session.scalars(stmt)
-    return CardSchema(many=True).dump(cards)
-    # for card in cards:
-    #     print(card.title, card.priority)
     # print(cards)
-    # print(cards[0].__dict__)
-
-@app.cli.command('first_card')
-def first_card():
     # select * from cards limit 1;
     # card = Card.query.first()
     stmt = db.select(Card).limit(1)
     card = db.session.scalar(stmt)
     print(card.__dict__)
+
+@app.cli.command('first_card')
+def first_card():     # select * from cards limit 1;
+    card = Card.query.first()
+    print(card)
 
 @app.cli.command('count_ongoing')
 def count_ongoing():
@@ -134,6 +123,6 @@ def count_ongoing():
     print(cards)
 
 
-@app.route('/')
+@app.route('/') 
 def index():
-    return "Hello World!"
+    return "hello world!"
