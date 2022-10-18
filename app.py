@@ -1,8 +1,9 @@
-from flask import Flask, jsonify     #when using this the import Flask use a UPPER CASE
+from flask import Flask, jsonify, request     #when using this the import Flask use a UPPER CASE
 from flask_sqlalchemy import SQLAlchemy
 from datetime import date
 from flask_marshmallow import Marshmallow
 from flask_bcrypt import Bcrypt
+from sqlalchemy.exc import IntegrityError
 
 app = Flask(__name__)
 app.config ['JSON_SORT_KEYS'] = False
@@ -24,8 +25,8 @@ class User(db.Model):   # This is for aurtherisation of the user
 
 class UserSchema(ma.Schema):
     class Meta:
-        fields = ('id', 'name', 'email', 'is_admin')
-
+        fields = ('id', 'name', 'email', 'password', 'is_admin')
+        
 
 class Card(db.Model):       # This will create a table that can be viewed by the users
     __tablename__ = 'cards'     # Changes the name of the name from card to cards
@@ -105,6 +106,22 @@ def seed_db():
     db.session.commit()
     print('Tables seeded')
 
+@app.route('/auth/register/', methods=['POST'])
+def auth_register():
+    try:
+        user_info = UserSchema().load(request.json)
+        user = User(
+            email = user_info['email'],
+            password = bcrypt.generate_password_hash(user_info['password']).decode('utf8'),
+            name = user_info['name']
+        )
+        # Add and commit user to DB
+        db.session.add(user)
+        db.session.commit()
+        # Respond to client
+        return UserSchema(exclude=['password']).dump(user), 201
+    except IntegrityError:
+        return {'error': 'Email already in use'}, 409
 
 @app.route('/cards/')
 def all_cards():
